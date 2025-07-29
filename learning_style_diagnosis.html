@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>視覚・聴覚優位診断システム</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #64748b;
+            --success-color: #059669;
+            --warning-color: #d97706;
+            --danger-color: #dc2626;
+            --background-color: #f8fafc;
+            --card-background: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', 'Meiryo', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+            font-size: clamp(14px, 2vw, 16px);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .questions-panel, .results-panel {
+            background: var(--card-background);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .panel-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .question-group {
+            margin-bottom: 2rem;
+        }
+
+        .group-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 8px;
+        }
+
+        .question {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .question:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+        }
+
+        .question-text {
+            font-weight: 500;
+            margin-bottom: 0.8rem;
+            color: var(--text-primary);
+        }
+
+        .radio-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .radio-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+
+        .radio-option input[type="radio"] {
+            width: 20px;
+            height: 20px;
+            margin-bottom: 0.3rem;
+            cursor: pointer;
+            accent-color: var(--primary-color);
+        }
+
+        .radio-option label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .scale-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .results-panel {
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+        }
+
+        .result-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .result-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        .result-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .visual-result {
+            background: linear-gradient(135deg, #dbeafe, #e0f2fe);
+            border-color: var(--primary-color);
+        }
+
+        .auditory-result {
+            background: linear-gradient(135deg, #dcfce7, #d1fae5);
+            border-color: var(--success-color);
+        }
+
+        .balanced-result {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border-color: var(--warning-color);
+        }
+
+        .strong-level { color: var(--danger-color); }
+        .moderate-level { color: var(--warning-color); }
+        .weak-level { color: var(--success-color); }
+
+        .recommendations {
+            background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+        }
+
+        .rec-section {
+            margin-bottom: 1rem;
+        }
+
+        .rec-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .rec-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .rec-list li {
+            padding: 0.3rem 0;
+            padding-left: 1.2rem;
+            position: relative;
+        }
+
+        .rec-list.suitable li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--success-color);
+            font-weight: bold;
+        }
+
+        .rec-list.unsuitable li::before {
+            content: "✗";
+            position: absolute;
+            left: 0;
+            color: var(--danger-color);
+            font-weight: bold;
+        }
+
+        .progress-indicator {
+            margin-bottom: 1rem;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--border-color);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--success-color));
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        @media (max-width: 767px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .questions-panel, .results-panel {
+                padding: 1.5rem;
+            }
+            
+            .radio-group {
+                gap: 0.2rem;
+            }
+            
+            .radio-option label {
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>視覚・聴覚優位診断システム</h1>
+            <p>あなたの学習スタイルを診断して、最適な勉強法を見つけましょう</p>
+        </header>
+
+        <main class="main-content">
+            <div class="questions-panel">
+                <h2 class="panel-title">診断質問（12問）</h2>
+                
+                <div class="progress-indicator">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <span id="progressText">0 / 12 問完了</span>
+                </div>
+
+                <div class="question-group">
+                    <h3 class="group-title">視覚的学習傾向</h3>
+                    
+                    <div class="question">
+                        <div class="question-text">1. 人の顔や風景の色・形・配置を細部まで覚えている</div>
+                        <div class="radio-group">
+                            <div class="radio-option">
+                                <input type="radio" name="v1" value="1" id="v1_1">
+                                <label for="v1_1">全く<br>当てはまらない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="v1" value="2" id="v1_2">
+                                <label for="v1_2">あまり<br>当てはまらない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="v1" value="3" id="v1_3">
+                                <label for="v1_3">どちらとも<br>いえない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="v1" value="4" id="v1_4">
+                                <label for="v1_4">やや<br>当てはまる</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="v1" value="5" id="v1_5">
+                                <label for="v1_5">非常に<br>当てはまる</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="question">
+                        <div class="question-text">2. 電話番号は頭の中で数字が並ぶ映像として思い浮かべる</div>
+                        <div class="radio-group">
+                            <div class="radio-option">
+                                <input type="radio" name="v2" value="1" id="v2_1">
+                                <label for="v2_1">全く<br>当てはまらない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="v2" value="2" id="v2_2">
+                                <label for="v2_2">あまり<br>当てはまらない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="v2" value="3" id="v2_3">
+                                <label for="v2_3">どちらとも<br>いえない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="v2" value="4" id="v2_4">
+                                <label for="v2_4">やや<br>当てはまる</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="v2" value="5" id="v2_5">
+                                <label for="v2_5">非常に<br>当てはまる</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="question">
+                        <div class="question-text">3. 地図や図表を見ると位置関係を思い出せる</div>
+                        <div class="radio-group">
+                            <div class="radio-option">
+                                <input type="radio" name="v3" value="1" id="v3_1">
+                                <label for="v3_1">全く<br>当てはまらない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="v3" value="2" id="v3_2">
+                                <label for="v3_2">あまり<br>当てはまらない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="v3" value="3" id="v3_3">
+                                <label for="v3_3">どちらとも<br>いえない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="v3" value="4" id="v3_4">
+                                <label for="v3_4">やや<br>当てはまる</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="v3" value="5" id="v3_5">
+                                <label for="v3_5">非常に<br>当てはまる</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="question">
+                        <div class="question-text">4. 図解やアイコンがある方が理解が速い</div>
+                        <div class="radio-group">
+                            <div class="radio-option">
+                                <input type="radio" name="v4" value="1" id="v4_1">
+                                <label for="v4_1">全く<br>当てはまらない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="v4" value="2" id="v4_2">
+                                <label for="v4_2">あまり<br>当てはまらない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="v4" value="3" id="v4_3">
+                                <label for="v4_3">どちらとも<br>いえない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="v4" value="4" id="v4_4">
+                                <label for="v4_4">やや<br>当てはまる</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="v4" value="5" id="v4_5">
+                                <label for="v4_5">非常に<br>当てはまる</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="question">
+                        <div class="question-text">5. 講義では板書やスライドを眺める時間が多い</div>
+                        <div class="radio-group">
+                            <div class="radio-option">
+                                <input type="radio" name="v5" value="1" id="v5_1">
+                                <label for="v5_1">全く<br>当てはまらない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="v5" value="2" id="v5_2">
+                                <label for="v5_2">あまり<br>当てはまらない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="v5" value="3" id="v5_3">
+                                <label for="v5_3">どちらとも<br>いえない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="v5" value="4" id="v5_4">
+                                <label for="v5_4">やや<br>当てはまる</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="v5" value="5" id="v5_5">
+                                <label for="v5_5">非常に<br>当てはまる</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="question">
+                        <div class="question-text">6. 手順は箇条書きの方が頭に入りやすい</div>
+                        <div class="radio-group">
+                            <div class="radio-option">
+                                <input type="radio" name="v6" value="1" id="v6_1">
+                                <label for="v6_1">全く<br>当てはまらない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="v6" value="2" id="v6_2">
+                                <label for="v6_2">あまり<br>当てはまらない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="v6" value="3" id="v6_3">
+                                <label for="v6_3">どちらとも<br>いえない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="v6" value="4" id="v6_4">
+                                <label for="v6_4">やや<br>当てはまる</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="v6" value="5" id="v6_5">
+                                <label for="v6_5">非常に<br>当てはまる</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="question-group">
+                    <h3 class="group-title">聴覚的学習傾向</h3>
+                    
+                    <div class="question">
+                        <div class="question-text">7. 人の声色や話す速さの違いをすぐ聞き分ける</div>
+                        <div class="radio-group">
+                            <div class="radio-option">
+                                <input type="radio" name="a1" value="1" id="a1_1">
+                                <label for="a1_1">全く<br>当てはまらない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="a1" value="2" id="a1_2">
+                                <label for="a1_2">あまり<br>当てはまらない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="a1" value="3" id="a1_3">
+                                <label for="a1_3">どちらとも<br>いえない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="a1" value="4" id="a1_4">
+                                <label for="a1_4">やや<br>当てはまる</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="a1" value="5" id="a1_5">
+                                <label for="a1_5">非常に<br>当てはまる</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="question">
+                        <div class="question-text">8. 覚える時は口の中で反復する</div>
+                        <div class="radio-group">
+                            <div class="radio-option">
+                                <input type="radio" name="a2" value="1" id="a2_1">
+                                <label for="a2_1">全く<br>当てはまらない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="a2" value="2" id="a2_2">
+                                <label for="a2_2">あまり<br>当てはまらない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="a2" value="3" id="a2_3">
+                                <label for="a2_3">どちらとも<br>いえない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="a2" value="4" id="a2_4">
+                                <label for="a2_4">やや<br>当てはまる</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="a2" value="5" id="a2_5">
+                                <label for="a2_5">非常に<br>当てはまる</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="question">
+                        <div class="question-text">9. 道順は言葉で記憶する</div>
+                        <div class="radio-group">
+                            <div class="radio-option">
+                                <input type="radio" name="a3" value="1" id="a3_1">
+                                <label for="a3_1">全く<br>当てはまらない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="a3" value="2" id="a3_2">
+                                <label for="a3_2">あまり<br>当てはまらない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="a3" value="3" id="a3_3">
+                                <label for="a3_3">どちらとも<br>いえない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="a3" value="4" id="a3_4">
+                                <label for="a3_4">やや<br>当てはまる</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="a3" value="5" id="a3_5">
+                                <label for="a3_5">非常に<br>当てはまる</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="question">
+                        <div class="question-text">10. 静かな環境の方が集中できる</div>
+                        <div class="radio-group">
+                            <div class="radio-option">
+                                <input type="radio" name="a4" value="1" id="a4_1">
+                                <label for="a4_1">全く<br>当てはまらない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="a4" value="2" id="a4_2">
+                                <label for="a4_2">あまり<br>当てはまらない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="a4" value="3" id="a4_3">
+                                <label for="a4_3">どちらとも<br>いえない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="a4" value="4" id="a4_4">
+                                <label for="a4_4">やや<br>当てはまる</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="a4" value="5" id="a4_5">
+                                <label for="a4_5">非常に<br>当てはまる</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="question">
+                        <div class="question-text">11. 話を聞くだけで内容を覚えられる</div>
+                        <div class="radio-group">
+                            <div class="radio-option">
+                                <input type="radio" name="a5" value="1" id="a5_1">
+                                <label for="a5_1">全く<br>当てはまらない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="a5" value="2" id="a5_2">
+                                <label for="a5_2">あまり<br>当てはまらない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="a5" value="3" id="a5_3">
+                                <label for="a5_3">どちらとも<br>いえない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="a5" value="4" id="a5_4">
+                                <label for="a5_4">やや<br>当てはまる</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="a5" value="5" id="a5_5">
+                                <label for="a5_5">非常に<br>当てはまる</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="question">
+                        <div class="question-text">12. 声に出して読むと理解が深まる</div>
+                        <div class="radio-group">
+                            <div class="radio-option">
+                                <input type="radio" name="a6" value="1" id="a6_1">
+                                <label for="a6_1">全く<br>当てはまらない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="a6" value="2" id="a6_2">
+                                <label for="a6_2">あまり<br>当てはまらない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="a6" value="3" id="a6_3">
+                                <label for="a6_3">どちらとも<br>いえない</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="a6" value="4" id="a6_4">
+                                <label for="a6_4">やや<br>当てはまる</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="a6" value="5" id="a6_5">
+                                <label for="a6_5">非常に<br>当てはまる</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-panel">
+                <h2 class="panel-title">診断結果</h2>
+                
+                <div class="result-section" id="dominantMode">
+                    <div class="result-title">優位モード</div>
+                    <div class="result-value" id="modeValue">診断を開始してください</div>
+                    <div class="result-description" id="modeDescription">12問の質問に答えると、あなたの学習優位モードが判定されます。</div>
+                </div>
+
+                <div class="result-section" id="dominanceLevel">
+                    <div class="result-title">優位度レベル</div>
+                    <div class="result-value" id="levelValue">-</div>
+                    <div class="result-description" id="levelDescription">優位モードの強さを表示します。</div>
+                </div>
+
+                <div class="result-section" id="typeAnalysis">
+                    <div class="result-title">タイプ分析</div>
+                    <div class="result-value" id="typeValue">-</div>
+                    <div class="result-description" id="typeDescription">より詳細な学習傾向を分析します。</div>
+                </div>
+
+                <div class="result-section recommendations" id="recommendations">
+                    <div class="result-title">学習法アドバイス</div>
+                    <div class="rec-section">
+                        <div class="rec-title">✓ おすすめの勉強法</div>
+                        <ul class="rec-list suitable" id="suitableMethods">
+                            <li>質問に答えると表示されます</li>
+                        </ul>
+                    </div>
+                    <div class="rec-section">
+                        <div class="rec-title">✗ 向いていない勉強法</div>
+                        <ul class="rec-list unsuitable" id="unsuitableMethods">
+                            <li>質問に答えると表示されます</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 診断システムのメインクラス
+        class LearningStyleDiagnosis {
+            constructor() {
+                this.questions = ['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'a1', 'a2', 'a3', 'a4', 'a5', 'a6'];
+                this.answers = {};
+                this.initializeEventListeners();
+            }
+
+            // イベントリスナーの初期化
+            initializeEventListeners() {
+                this.questions.forEach(questionName => {
+                    const radios = document.querySelectorAll(`input[name="${questionName}"]`);
+                    radios.forEach(radio => {
+                        radio.addEventListener('change', () => {
+                            this.answers[questionName] = parseInt(radio.value);
+                            this.updateResults();
+                            this.updateProgress();
+                        });
+                    });
+                });
+            }
+
+            // 進捗状況の更新
+            updateProgress() {
+                const completedQuestions = Object.keys(this.answers).length;
+                const totalQuestions = this.questions.length;
+                const progressPercentage = (completedQuestions / totalQuestions) * 100;
+                
+                document.getElementById('progressFill').style.width = `${progressPercentage}%`;
+                document.getElementById('progressText').textContent = `${completedQuestions} / ${totalQuestions} 問完了`;
+            }
+
+            // 結果の計算と更新
+            updateResults() {
+                const completedQuestions = Object.keys(this.answers).length;
+                
+                if (completedQuestions === 0) return;
+
+                // スコア計算
+                const visualScore = this.calculateVisualScore();
+                const auditoryScore = this.calculateAuditoryScore();
+                const difference = Math.abs(visualScore - auditoryScore);
+
+                // 優位モードの判定
+                const dominantMode = this.determineDominantMode(visualScore, auditoryScore, difference);
+                
+                // 優位度レベルの判定
+                const dominanceLevel = this.determineDominanceLevel(difference, dominantMode);
+                
+                // タイプ分析
+                const typeAnalysis = this.determineTypeAnalysis(dominantMode, visualScore, auditoryScore);
+
+                // UIの更新
+                this.updateModeUI(dominantMode, visualScore, auditoryScore);
+                this.updateLevelUI(dominanceLevel, dominantMode);
+                this.updateTypeUI(typeAnalysis);
+                this.updateRecommendationsUI(dominantMode, typeAnalysis);
+            }
+
+            // 視覚スコアの計算
+            calculateVisualScore() {
+                const visualQuestions = ['v1', 'v2', 'v3', 'v4', 'v5', 'v6'];
+                let score = 0;
+                let count = 0;
+                
+                visualQuestions.forEach(q => {
+                    if (this.answers[q]) {
+                        score += this.answers[q];
+                        count++;
+                    }
+                });
+                
+                // 未回答分は平均値で補完
+                if (count > 0) {
+                    const average = score / count;
+                    return score + (average * (6 - count));
+                }
+                return 18; // デフォルト値（中央値）
+            }
+
+            // 聴覚スコアの計算
+            calculateAuditoryScore() {
+                const auditoryQuestions = ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'];
+                let score = 0;
+                let count = 0;
+                
+                auditoryQuestions.forEach(q => {
+                    if (this.answers[q]) {
+                        score += this.answers[q];
+                        count++;
+                    }
+                });
+                
+                // 未回答分は平均値で補完
+                if (count > 0) {
+                    const average = score / count;
+                    return score + (average * (6 - count));
+                }
+                return 18; // デフォルト値（中央値）
+            }
+
+            // 優位モードの判定
+            determineDominantMode(visualScore, auditoryScore, difference) {
+                if (difference <= 3) {
+                    return 'Balanced';
+                } else if (visualScore > auditoryScore) {
+                    return 'Visual';
+                } else {
+                    return 'Auditory';
+                }
+            }
+
+            // 優位度レベルの判定
+            determineDominanceLevel(difference, dominantMode) {
+                if (dominantMode === 'Balanced') {
+                    return null;
+                }
+                
+                if (difference >= 4 && difference <= 6) {
+                    return 'Weak';
+                } else if (difference >= 7 && difference <= 10) {
+                    return 'Moderate';
+                } else if (difference >= 11) {
+                    return 'Strong';
+                }
+                return 'Weak';
+            }
+
+            // タイプ分析の判定
+            determineTypeAnalysis(dominantMode, visualScore, auditoryScore) {
+                if (dominantMode === 'Balanced') {
+                    return 'マルチモーダルタイプ';
+                } else if (dominantMode === 'Visual') {
+                    // 空間配置傾向 vs 図解抽象化傾向
+                    const spatialTendency = (this.answers.v1 || 3) + (this.answers.v3 || 3) + (this.answers.v5 || 3);
+                    const diagramTendency = (this.answers.v2 || 3) + (this.answers.v4 || 3) + (this.answers.v6 || 3);
+                    
+                    return spatialTendency > diagramTendency ? '空間配置タイプ' : '図解抽象化タイプ';
+                } else {
+                    // リスニング吸収傾向 vs 発声リハーサル傾向
+                    const listeningTendency = (this.answers.a1 || 3) + (this.answers.a4 || 3) + (this.answers.a5 || 3);
+                    const rehearsalTendency = (this.answers.a2 || 3) + (this.answers.a3 || 3) + (this.answers.a6 || 3);
+                    
+                    return listeningTendency > rehearsalTendency ? 'リスニング吸収タイプ' : '発声リハーサルタイプ';
+                }
+            }
+
+            // モードUIの更新
+            updateModeUI(dominantMode, visualScore, auditoryScore) {
+                const modeElement = document.getElementById('dominantMode');
+                const modeValue = document.getElementById('modeValue');
+                const modeDescription = document.getElementById('modeDescription');
+
+                // 背景色の変更
+                modeElement.className = 'result-section';
+                if (dominantMode === 'Visual') {
+                    modeElement.classList.add('visual-result');
+                } else if (dominantMode === 'Auditory') {
+                    modeElement.classList.add('auditory-result');
+                } else {
+                    modeElement.classList.add('balanced-result');
+                }
+
+                // 値と説明の更新
+                const modeNames = {
+                    'Visual': '視覚優位',
+                    'Auditory': '聴覚優位',
+                    'Balanced': 'バランス型'
+                };
+
+                modeValue.textContent = modeNames[dominantMode];
+                
+                const descriptions = {
+                    'Visual': `視覚的情報処理が得意です。（視覚: ${visualScore.toFixed(1)}点 / 聴覚: ${auditoryScore.toFixed(1)}点）`,
+                    'Auditory': `聴覚的情報処理が得意です。（視覚: ${visualScore.toFixed(1)}点 / 聴覚: ${auditoryScore.toFixed(1)}点）`,
+                    'Balanced': `視覚・聴覚をバランスよく活用できます。（視覚: ${visualScore.toFixed(1)}点 / 聴覚: ${auditoryScore.toFixed(1)}点）`
+                };
+
+                modeDescription.textContent = descriptions[dominantMode];
+            }
+
+            // レベルUIの更新
+            updateLevelUI(dominanceLevel, dominantMode) {
+                const levelValue = document.getElementById('levelValue');
+                const levelDescription = document.getElementById('levelDescription');
+
+                if (dominantMode === 'Balanced') {
+                    levelValue.textContent = '-';
+                    levelDescription.textContent = 'バランス型のため優位度は測定されません。';
+                    levelValue.className = 'result-value';
+                } else {
+                    const levelNames = {
+                        'Strong': '強い優位性',
+                        'Moderate': '中程度の優位性',
+                        'Weak': '弱い優位性'
+                    };
+
+                    const levelDescriptions = {
+                        'Strong': 'かなり明確な学習スタイルの偏りがあります。',
+                        'Moderate': '適度な学習スタイルの傾向があります。',
+                        'Weak': '軽度な学習スタイルの傾向があります。'
+                    };
+
+                    levelValue.textContent = levelNames[dominanceLevel];
+                    levelDescription.textContent = levelDescriptions[dominanceLevel];
+                    levelValue.className = `result-value ${dominanceLevel.toLowerCase()}-level`;
+                }
+            }
+
+            // タイプUIの更新
+            updateTypeUI(typeAnalysis) {
+                const typeValue = document.getElementById('typeValue');
+                const typeDescription = document.getElementById('typeDescription');
+
+                typeValue.textContent = typeAnalysis;
+
+                const typeDescriptions = {
+                    'マルチモーダルタイプ': '状況に応じて視覚・聴覚を使い分けられる柔軟な学習者です。',
+                    '空間配置タイプ': '位置関係や空間的情報を重視する視覚学習者です。',
+                    '図解抽象化タイプ': '図表や概念図による理解を重視する視覚学習者です。',
+                    'リスニング吸収タイプ': '聞くことで情報を効率的に吸収する聴覚学習者です。',
+                    '発声リハーサルタイプ': '声に出すことで記憶を強化する聴覚学習者です。'
+                };
+
+                typeDescription.textContent = typeDescriptions[typeAnalysis] || '';
+            }
+
+            // 推奨学習法UIの更新
+            updateRecommendationsUI(dominantMode, typeAnalysis) {
+                const suitableMethods = document.getElementById('suitableMethods');
+                const unsuitableMethods = document.getElementById('unsuitableMethods');
+
+                const recommendations = this.getRecommendations(dominantMode, typeAnalysis);
+
+                // おすすめ学習法
+                suitableMethods.innerHTML = '';
+                recommendations.suitable.forEach(method => {
+                    const li = document.createElement('li');
+                    li.textContent = method;
+                    suitableMethods.appendChild(li);
+                });
+
+                // 向いていない学習法
+                unsuitableMethods.innerHTML = '';
+                recommendations.unsuitable.forEach(method => {
+                    const li = document.createElement('li');
+                    li.textContent = method;
+                    unsuitableMethods.appendChild(li);
+                });
+            }
+
+            // 推奨学習法の詳細データ
+            getRecommendations(dominantMode, typeAnalysis) {
+                const recommendations = {
+                    'Visual': {
+                        suitable: [
+                            'マインドマップや概念図を活用した整理',
+                            '色分けやハイライトを使ったノート作成',
+                            '動画教材での学習（字幕オン推奨）',
+                            '図解が豊富な参考書の活用',
+                            'フローチャートや表による情報整理'
+                        ],
+                        unsuitable: [
+                            '長時間の音声講義のみでの学習',
+                            '文字だけの単調な資料での勉強',
+                            '視覚的補助なしの暗記作業',
+                            '音読中心の学習スタイル'
+                        ]
+                    },
+                    'Auditory': {
+                        suitable: [
+                            'ポッドキャストや音声教材での学習',
+                            '音読や声に出しての記憶練習',
+                            '録音した内容の聞き返し学習',
+                            'ディスカッションや議論での理解深化',
+                            'BGMありの学習環境'
+                        ],
+                        unsuitable: [
+                            '完全無音環境での黙読のみ',
+                            '図表中心で説明の少ない資料',
+                            '書き写し作業のみに頼った学習',
+                            '視覚情報のみの学習スタイル'
+                        ]
+                    },
+                    'Balanced': {
+                        suitable: [
+                            '視覚・聴覚情報を組み合わせた学習',
+                            '状況に応じた学習方法の使い分け',
+                            'マルチメディア教材の活用',
+                            '五感をバランスよく使った体験学習',
+                            '複数の情報チャンネルを同時活用'
+                        ],
+                        unsuitable: [
+                            '特定の感覚のみに偏った単調学習',
+                            '情報提示方法が限定的な教材',
+                            '一つの学習スタイルのみの固執',
+                            '感覚的多様性のない学習環境'
+                        ]
+                    }
+                };
+
+                return recommendations[dominantMode] || recommendations['Balanced'];
+            }
+        }
+
+        // アプリケーションの初期化
+        document.addEventListener('DOMContentLoaded', () => {
+            new LearningStyleDiagnosis();
+        });
+    </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"rayId":"966d639ad9d0d76f","serverTiming":{"name":{"cfExtPri":true,"cfEdge":true,"cfOrigin":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}},"version":"2025.7.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
+</body>
+</html>
+    <script id="html_badge_script1">
+        window.__genspark_remove_badge_link = "https://www.genspark.ai/api/html_badge/" +
+            "remove_badge?token=To%2FBnjzloZ3UfQdcSaYfDvHMCn%2Ftjl90eJL8Lj08eSryPQfJ3%2BsZw1ic%2BSyy5svxlyGriJS%2BLWoMZbHKFxjuw6mOXa0gMcBWhAxoouIbPFxhLOtjsLSfWVkXZri3nOtwRkSSEUXQ%2BlLN32FcauuKd2dZsRATjSGXACKB44dMPMNTpRO6AiCy6q0h5KLL60VH%2BHkYYpMxKASHkw6A0XUvTPr%2FTPq0vWcnPIzDv3p3UbVvW4YMQvpH6ooPV2%2BZ3Ty91X9dNKcKYlhcPNI7T5qSHw6%2FIh0Fk9e6cxEvxmqmJMLDSlq0lS6UdN5VPGjNLKLejPgKPFjv6ZQT5KPeGYpMz89O2G5Yah8lcAyARQk2IHoTSJJVzXdUAk5LUUrt5heWfHtr5S%2B2jAnA4W9toWU%2Faj9BM7DfkEyLXsbz0uI7oH%2BJp%2B8UgoKn4Sg2im1aNpSSWgIRFSSDjFrKIr7t%2BBvvjn4jF%2Fp5peBAF36UajGxle9gFpharIshbPcPjwqYl39jc%2B38hPgLXV%2F3UGJpqnzQnw%3D%3D";
+        window.__genspark_locale = "ja-JP";
+        window.__genspark_token = "To/BnjzloZ3UfQdcSaYfDvHMCn/tjl90eJL8Lj08eSryPQfJ3+sZw1ic+Syy5svxlyGriJS+LWoMZbHKFxjuw6mOXa0gMcBWhAxoouIbPFxhLOtjsLSfWVkXZri3nOtwRkSSEUXQ+lLN32FcauuKd2dZsRATjSGXACKB44dMPMNTpRO6AiCy6q0h5KLL60VH+HkYYpMxKASHkw6A0XUvTPr/TPq0vWcnPIzDv3p3UbVvW4YMQvpH6ooPV2+Z3Ty91X9dNKcKYlhcPNI7T5qSHw6/Ih0Fk9e6cxEvxmqmJMLDSlq0lS6UdN5VPGjNLKLejPgKPFjv6ZQT5KPeGYpMz89O2G5Yah8lcAyARQk2IHoTSJJVzXdUAk5LUUrt5heWfHtr5S+2jAnA4W9toWU/aj9BM7DfkEyLXsbz0uI7oH+Jp+8UgoKn4Sg2im1aNpSSWgIRFSSDjFrKIr7t+Bvvjn4jF/p5peBAF36UajGxle9gFpharIshbPcPjwqYl39jc+38hPgLXV/3UGJpqnzQnw==";
+    </script>
+    
+    <script id="html_notice_dialog_script" src="https://www.genspark.ai/notice_dialog.js"></script>
+    
